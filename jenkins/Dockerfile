@@ -1,7 +1,16 @@
+# Stage 0: get official debian keyring
+FROM debian:bookworm-slim AS keyring
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends debian-archive-keyring \
+ && rm -rf /var/lib/apt/lists/*
+
 FROM jenkins/jenkins:lts
 
 # Switch to root to install plugins
 USER root
+
+# Copy keyring from previous stage
+COPY --from=keyring /usr/share/keyrings/debian-archive-keyring.gpg /usr/share/keyrings/
 
 # Install docker CLI (optional, for docker-in-docker if needed)
 RUN apt-get update && apt-get install -y \
