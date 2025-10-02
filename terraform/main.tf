@@ -127,12 +127,16 @@ resource "aws_cognito_user_pool_client" "web_client" {
 
   callback_urls = [
     "http://localhost:3000/",
-    "http://localhost:3000/index.html"
+    "http://localhost:3000/index.html",
+    "https://jenkins.hanov.me/stopjob",
+    "https://jenkins.hanov.me/stopjob/"
   ]
   
   logout_urls = [
     "http://localhost:3000/",
-    "http://localhost:3000/index.html"
+    "http://localhost:3000/index.html",
+    "https://jenkins.hanov.me/stopjob",
+    "https://jenkins.hanov.me/stopjob/"
   ]
 
   supported_identity_providers = ["COGNITO"]

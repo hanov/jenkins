@@ -32,7 +32,10 @@ variable "callback_urls" {
   type        = list(string)
   default     = [
     "http://localhost/securityRealm/finishLogin",
-    "http://localhost:8080/securityRealm/finishLogin"
+    "http://localhost:8080/securityRealm/finishLogin",
+    "https://jenkins.hanov.me/securityRealm/finishLogin",
+    "https://jenkins.hanov.me/securityRealm/finishLogin/",
+    "https://jenkins.hanov.me/jenkins/securityRealm/finishLogin"
   ]
 }
 
@@ -41,7 +44,10 @@ variable "logout_urls" {
   type        = list(string)
   default     = [
     "http://localhost",
-    "http://localhost:8080"
+    "http://localhost:8080",
+    "https://jenkins.hanov.me",
+    "https://jenkins.hanov.me/",
+    "https://jenkins.hanov.me/jenkins"
   ]
 }
 
