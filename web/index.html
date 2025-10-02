@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jenkins Build Cancellation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            color: #334155;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .header {
+            background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+            padding: 2rem 0;
+            border-bottom: 3px solid #0ea5e9;
+        }
+        
+        .header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: #0ea5e9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+        
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: white;
+            margin: 0;
+        }
+        
+        .subtitle {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-top: 0.25rem;
+        }
+        
+        .content {
+            padding: 2.5rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .form-group {
+            margin-bottom: 2rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: white;
+            font-family: inherit;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+        
+        textarea {
+            height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .btn {
+            background: #0ea5e9;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.2s ease;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+        
+        .btn:hover {
+            background: #0284c7;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-login {
+            background: #0ea5e9;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-logout {
+            background: #64748b;
+            width: auto;
+            padding: 0.5rem 1rem;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+        
+        .btn-logout:hover {
+            background: #475569;
+        }
+        
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(71, 85, 105, 0.15);
+        }
+        
+        .btn-cancel {
+            background: #dc2626;
+            color: white;
+            border: 1px solid #dc2626;
+        }
+        
+        .btn-cancel:hover {
+            background: #b91c1c;
+            border-color: #b91c1c;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+        }
+        
+        .user-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-details {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: #0ea5e9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .login-container {
+            text-align: center;
+            padding: 4rem 2rem;
+            max-width: 400px;
+            margin: 2rem auto;
+        }
+        
+        .login-container h1 {
+            color: #1e293b;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+        
+        .login-container p {
+            color: #64748b;
+            margin-bottom: 2rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 4rem;
+        }
+        
+        .builds-list {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            min-height: 200px;
+            background: #fafafa;
+        }
+        
+        .builds-header {
+            background: #f8fafc;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .builds-content {
+            padding: 1.5rem;
+        }
+        
+        .build-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .build-item:hover {
+            border-color: #0ea5e9;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
+        }
+        
+        .build-item.selected {
+            background: #eff6ff;
+            border-color: #0ea5e9;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+        }
+        
+        .build-item.selected::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #0ea5e9;
+            border-radius: 0 2px 2px 0;
+        }
+        
+        .build-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .build-title {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 1rem;
+        }
+        
+        .build-details {
+            font-size: 13px;
+            color: #64748b;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.5rem;
+        }
+        
+        .build-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .build-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            background: #dcfce7;
+            color: #166534;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .build-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #22c55e;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading-text {
+            text-align: center;
+            color: #64748b;
+            font-style: italic;
+        }
+        
+        .no-builds {
+            text-align: center;
+            color: #64748b;
+            padding: 2rem;
+        }
+        
+        .selected-build {
+            background: #eff6ff;
+            border: 1px solid #0ea5e9;
+        }
+        
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .success-message {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cancel-form {
+            background: #fafafa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            align-items: stretch;
+        }
+        
+        .form-actions .btn {
+            width: auto;
+            flex: 1;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            height: 44px;
+            padding: 0.75rem 1.5rem;
+            box-sizing: border-box;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 0 1rem;
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .content {
+                padding: 1.5rem;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .build-details {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <h2>Loading...</h2>
+            <p>Checking authentication status...</p>
+        </div>
+
+        <!-- Login Required -->
+        <div id="loginContainer" class="login-container hidden">
+            <h1>🔐 Authentication Required</h1>
+            <p>Please log in with your Cognito account to access the Jenkins Build Cancellation form.</p>
+            <button id="loginBtn" class="btn btn-login">Login with Cognito</button>
+        </div>
+
+        <!-- Authenticated Content -->
+        <div id="authenticatedContent" class="hidden">
+            <div class="header">
+                <div class="header-content">
+                    <div class="logo-section">
+                        <div class="logo">🏗️</div>
+                        <div>
+                            <h1>Jenkins Build Manager</h1>
+                            <div class="subtitle">Enterprise Build Cancellation System</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="content">
+                <div class="user-info">
+                    <div class="user-details">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <div>
+                            <strong>Logged in as:</strong> <span id="userEmail"></span>
+                        </div>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-logout">Sign Out</button>
+                </div>
+
+                <!-- Running Builds List -->
+                <div class="form-group">
+                    <div class="builds-list">
+                        <div class="builds-header">
+                            <label style="margin: 0; text-transform: none; font-size: 1rem; color: #1e293b;">Active Build Queue</label>
+                            <button id="refreshBuilds" class="btn btn-secondary" style="width: auto; padding: 0.5rem 1rem; margin: 0; font-size: 13px;">Refresh</button>
+                        </div>
+                        <div class="builds-content">
+                            <div id="buildsLoading" class="loading-text">Loading active builds...</div>
+                            <div id="noBuilds" class="no-builds hidden">No active builds found in the system.</div>
+                            <div id="buildsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cancel Form -->
+                <form id="cancelForm" class="cancel-form hidden">
+                    <div class="form-group">
+                        <label for="selectedBuild">Selected Build</label>
+                        <input type="text" id="selectedBuild" readonly class="selected-build">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reason">Cancellation Reason</label>
+                        <textarea id="reason" name="reason" required placeholder="Please provide a detailed reason for cancelling this build..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-cancel">Cancel Build</button>
+                        <button type="button" id="clearSelection" class="btn btn-secondary">Clear Selection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cognito Configuration
+        const COGNITO_CONFIG = {
+            userPoolId: 'us-east-1_mHHkRBGwp',
+            clientId: '8suo93gn4lp3vm0dhv3prjtdn',
+            domain: 'jenkins-auth-62745.auth.us-east-1.amazoncognito.com',
+            redirectUri: window.location.origin + '/stopjob/',
+            responseType: 'code',
+            scope: 'openid email profile'
+        };
+
+        let accessToken = null;
+        let userInfo = null;
+        let userBuilds = [];
+        let selectedBuild = null;
+
+        // DOM Elements
+        const loading = document.getElementById('loading');
+        const loginContainer = document.getElementById('loginContainer');
+        const authenticatedContent = document.getElementById('authenticatedContent');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userEmail = document.getElementById('userEmail');
+        const cancelForm = document.getElementById('cancelForm');
+        const buildsList = document.getElementById('buildsList');
+        const buildsLoading = document.getElementById('buildsLoading');
+        const noBuilds = document.getElementById('noBuilds');
+        const selectedBuildField = document.getElementById('selectedBuild');
+        const clearSelectionBtn = document.getElementById('clearSelection');
+        const refreshBuildsBtn = document.getElementById('refreshBuilds');
+
+        // Utility Functions
+        function showLoading() {
+            loading.classList.remove('hidden');
+            loginContainer.classList.add('hidden');
+            authenticatedContent.classList.add('hidden');
+        }
+
+        function showLogin() {
+            loading.classList.add('hidden');
+            loginContainer.classList.remove('hidden');
+            authenticatedContent.classList.add('hidden');
+        }
+
+        function showAuthenticated() {
+            loading.classList.add('hidden');
+            loginContainer.classList.add('hidden');
+            authenticatedContent.classList.remove('hidden');
+        }
+
+        // Authentication Functions
+        function generateCodeVerifier() {
+            const array = new Uint32Array(56/2);
+            crypto.getRandomValues(array);
+            return Array.from(array, dec => ('0' + dec.toString(16)).substr(-2)).join('');
+        }
+
+        function generateCodeChallenge(verifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            return crypto.subtle.digest('SHA-256', data).then(buffer => {
+                return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+                    .replace(/\+/g, '-')
+                    .replace(/\//g, '_')
+                    .replace(/=/g, '');
+            });
+        }
+
+        function initiateLogin() {
+            const codeVerifier = generateCodeVerifier();
+            sessionStorage.setItem('codeVerifier', codeVerifier);
+            
+            generateCodeChallenge(codeVerifier).then(codeChallenge => {
+                const state = Math.random().toString(36).substring(2, 15);
+                sessionStorage.setItem('state', state);
+                
+                const authUrl = `https://${COGNITO_CONFIG.domain}/oauth2/authorize?` +
+                    `response_type=${COGNITO_CONFIG.responseType}&` +
+                    `client_id=${COGNITO_CONFIG.clientId}&` +
+                    `redirect_uri=${encodeURIComponent(COGNITO_CONFIG.redirectUri)}&` +
+                    `scope=${encodeURIComponent(COGNITO_CONFIG.scope)}&` +
+                    `state=${state}&` +
+                    `code_challenge=${codeChallenge}&` +
+                    `code_challenge_method=S256`;
+                
+                window.location.href = authUrl;
+            });
+        }
+
+        async function exchangeCodeForTokens(code, codeVerifier) {
+            const tokenUrl = `https://${COGNITO_CONFIG.domain}/oauth2/token`;
+            
+            const response = await fetch(tokenUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    grant_type: 'authorization_code',
+                    client_id: COGNITO_CONFIG.clientId,
+                    code: code,
+                    redirect_uri: COGNITO_CONFIG.redirectUri,
+                    code_verifier: codeVerifier
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Token exchange failed');
+            }
+
+            return response.json();
+        }
+
+        async function getUserInfo(accessToken) {
+            const userInfoUrl = `https://${COGNITO_CONFIG.domain}/oauth2/userInfo`;
+            
+            const response = await fetch(userInfoUrl, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get user info');
+            }
+
+            return response.json();
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            localStorage.clear();
+            accessToken = null;
+            userInfo = null;
+            
+            const logoutUrl = `https://${COGNITO_CONFIG.domain}/logout?` +
+                `client_id=${COGNITO_CONFIG.clientId}&` +
+                `logout_uri=${encodeURIComponent(COGNITO_CONFIG.redirectUri)}`;
+            
+            window.location.href = logoutUrl;
+        }
+
+        // Initialize App
+        async function init() {
+            showLoading();
+            
+            // Check for authorization code in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            
+            if (code && state) {
+                const storedState = sessionStorage.getItem('state');
+                const codeVerifier = sessionStorage.getItem('codeVerifier');
+                
+                if (state === storedState && codeVerifier) {
+                    try {
+                        const tokens = await exchangeCodeForTokens(code, codeVerifier);
+                        
+                        // Use ID token for authentication with backend (contains user info)
+                        // and access token for Cognito userInfo endpoint
+                        accessToken = tokens.id_token || tokens.access_token;
+                        userInfo = await getUserInfo(tokens.access_token);
+                        
+                        // Store tokens
+                        sessionStorage.setItem('accessToken', accessToken);
+                        sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
+                        
+                        console.log('Tokens received:', {
+                            access_token: tokens.access_token ? 'present' : 'missing',
+                            id_token: tokens.id_token ? 'present' : 'missing',
+                            token_type: tokens.token_type
+                        });
+                        
+                        // Clear URL parameters
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        
+                        showAuthenticated();
+                        updateUserInterface();
+                    } catch (error) {
+                        console.error('Authentication failed:', error);
+                        showLogin();
+                    }
+                } else {
+                    showLogin();
+                }
+            } else {
+                // Check for existing session
+                accessToken = sessionStorage.getItem('accessToken');
+                const storedUserInfo = sessionStorage.getItem('userInfo');
+                
+                if (accessToken && storedUserInfo) {
+                    userInfo = JSON.parse(storedUserInfo);
+                    showAuthenticated();
+                    updateUserInterface();
+                } else {
+                    showLogin();
+                }
+            }
+        }
+
+        async function updateUserInterface() {
+            if (userInfo) {
+                const email = userInfo.email || userInfo.username;
+                userEmail.textContent = email;
+                
+                // Set user avatar initial
+                const userAvatar = document.getElementById('userAvatar');
+                if (userAvatar && email) {
+                    userAvatar.textContent = email.charAt(0).toUpperCase();
+                }
+                
+                // Debug: Check what token we have
+                try {
+                    const debugResponse = await fetch('/stopjob/api/debug/token', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`
+                        }
+                    });
+                    
+                    if (debugResponse.ok) {
+                        const debugData = await debugResponse.json();
+                        console.log('Token debug info:', debugData);
+                    } else {
+                        console.error('Token debug failed with status:', debugResponse.status);
+                        const errorText = await debugResponse.text();
+                        console.error('Debug error:', errorText);
+                    }
+                } catch (error) {
+                    console.error('Token debug request failed:', error);
+                }
+                
+                // Also test user info endpoint
+                try {
+                    const userInfoResponse = await apiCall('/user/info');
+                    console.log('User info from backend:', userInfoResponse);
+                } catch (error) {
+                    console.error('User info request failed:', error);
+                }
+                
+                loadUserBuilds();
+            }
+        }
+
+        // API Functions
+        async function apiCall(endpoint, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            };
+
+            try {
+                const response = await fetch(`/stopjob/api${endpoint}`, {
+                    ...defaultOptions,
+                    ...options,
+                    headers: { ...defaultOptions.headers, ...options.headers }
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'API request failed';
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                return response.json();
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    throw new Error('Unable to connect to server. Please check if the backend is running.');
+                }
+                throw error;
+            }
+        }
+
+        async function loadUserBuilds() {
+            try {
+                buildsLoading.classList.remove('hidden');
+                noBuilds.classList.add('hidden');
+                
+                // Clear existing builds
+                const existingBuilds = buildsList.querySelectorAll('.build-item');
+                existingBuilds.forEach(item => item.remove());
+
+                const data = await apiCall('/user/builds');
+                userBuilds = data.builds || [];
+
+                buildsLoading.classList.add('hidden');
+
+                if (userBuilds.length === 0) {
+                    noBuilds.classList.remove('hidden');
+                } else {
+                    renderBuilds();
+                }
+            } catch (error) {
+                console.error('Failed to load builds:', error);
+                buildsLoading.classList.add('hidden');
+                showMessage(`Failed to load builds: ${error.message}`, 'error');
+            }
+        }
+
+        function renderBuilds() {
+            userBuilds.forEach(build => {
+                const buildItem = document.createElement('div');
+                buildItem.className = 'build-item';
+                buildItem.dataset.jobName = build.job_name;
+                buildItem.dataset.buildNumber = build.build_number;
+
+                // Handle timestamp conversion
+                let startTimeStr = 'Unknown';
+                if (build.start_time && build.start_time > 0) {
+                    const startTime = new Date(build.start_time);
+                    startTimeStr = startTime.toLocaleString();
+                }
+
+                // Handle duration
+                const duration = build.estimated_duration && build.estimated_duration > 0 
+                    ? Math.round(build.estimated_duration / 60000) 
+                    : 'Unknown';
+
+                // Show who started the build
+                const startedBy = build.started_by || 'Unknown';
+
+                buildItem.innerHTML = `
+                    <div class="build-header">
+                        <div class="build-title">${build.job_name} #${build.build_number}</div>
+                        <span class="build-status">RUNNING</span>
+                    </div>
+                    <div class="build-details">
+                        <div class="build-detail-item">
+                            <strong>Started by:</strong> ${startedBy}
+                        </div>
+                        <div class="build-detail-item">
+                            <strong>Started:</strong> ${startTimeStr}
+                        </div>
+                        <div class="build-detail-item">
+                            <strong>Est. Duration:</strong> ${duration} min
+                        </div>
+                        <div class="build-detail-item">
+                            <strong>Node:</strong> ${build.node || 'built-in'}
+                        </div>
+                    </div>
+                `;
+
+                buildItem.addEventListener('click', () => selectBuild(build, buildItem));
+                buildsList.appendChild(buildItem);
+            });
+        }
+
+        function selectBuild(build, element) {
+            // Clear previous selection
+            const previousSelected = buildsList.querySelector('.build-item.selected');
+            if (previousSelected) {
+                previousSelected.classList.remove('selected');
+            }
+
+            // Select new build
+            element.classList.add('selected');
+            selectedBuild = build;
+            selectedBuildField.value = `${build.job_name} #${build.build_number}`;
+            
+            // Show cancel form
+            cancelForm.classList.remove('hidden');
+        }
+
+        function clearSelection() {
+            const selected = buildsList.querySelector('.build-item.selected');
+            if (selected) {
+                selected.classList.remove('selected');
+            }
+            selectedBuild = null;
+            selectedBuildField.value = '';
+            cancelForm.classList.add('hidden');
+            
+            // Clear reason field
+            document.getElementById('reason').value = '';
+        }
+
+        async function cancelSelectedBuild(reason) {
+            if (!selectedBuild) {
+                throw new Error('No build selected');
+            }
+
+            const response = await apiCall(`/builds/${selectedBuild.job_name}/${selectedBuild.build_number}/cancel`, {
+                method: 'POST',
+                body: JSON.stringify({ reason })
+            });
+
+            return response;
+        }
+
+        function showMessage(message, type = 'info') {
+            // Remove existing messages
+            const existingMessages = document.querySelectorAll('.error-message, .success-message');
+            existingMessages.forEach(msg => msg.remove());
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+            messageDiv.textContent = message;
+
+            // Insert before the builds list
+            const buildsContainer = document.querySelector('.form-group');
+            buildsContainer.parentNode.insertBefore(messageDiv, buildsContainer);
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Event Listeners
+        loginBtn.addEventListener('click', initiateLogin);
+        logoutBtn.addEventListener('click', logout);
+        clearSelectionBtn.addEventListener('click', clearSelection);
+        refreshBuildsBtn.addEventListener('click', loadUserBuilds);
+
+        // Handle form submission with event delegation since the form structure changed
+        document.addEventListener('submit', async function(e) {
+            if (e.target.id === 'cancelForm') {
+                e.preventDefault();
+                
+                const formData = new FormData(e.target);
+                const reason = formData.get('reason').trim();
+                
+                if (!reason) {
+                    showMessage('Please provide a reason for cancellation', 'error');
+                    return;
+                }
+
+                if (!selectedBuild) {
+                    showMessage('Please select a build to cancel', 'error');
+                    return;
+                }
+                
+                // Show confirmation
+                const confirmMsg = `Are you sure you want to cancel build "${selectedBuild.job_name} #${selectedBuild.build_number}"?\n\nReason: ${reason}`;
+                
+                if (confirm(confirmMsg)) {
+                    try {
+                        // Disable submit button
+                        const submitBtn = e.target.querySelector('button[type="submit"]');
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'Cancelling...';
+                        
+                        const response = await cancelSelectedBuild(reason);
+                        
+                        showMessage(`Build ${response.job_name}#${response.build_number} has been successfully cancelled`, 'success');
+                        
+                        // Clear selection and reload builds
+                        clearSelection();
+                        setTimeout(() => loadUserBuilds(), 2000); // Reload after 2 seconds
+                        
+                    } catch (error) {
+                        console.error('Cancellation failed:', error);
+                        showMessage(`Failed to cancel build: ${error.message}`, 'error');
+                    } finally {
+                        // Re-enable submit button
+                        const submitBtn = e.target.querySelector('button[type="submit"]');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Cancel Build';
+                    }
+                }
+            }
+        });
+
+        // Initialize the application
+        init();
+    </script>
+</body>
+</html>
