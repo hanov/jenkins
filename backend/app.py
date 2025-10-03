@@ -10,6 +10,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import jwt
 from functools import wraps
+from slack_sdk.webhook import WebhookClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +29,10 @@ COGNITO_DOMAIN = os.getenv('COGNITO_DOMAIN', 'jenkins-auth-62745.auth.us-east-1.
 COGNITO_USER_POOL_ID = os.getenv('COGNITO_USER_POOL_ID', 'us-east-1_mHHkRBGwp')
 COGNITO_WEB_CLIENT_ID = os.getenv('COGNITO_WEB_CLIENT_ID', '8suo93gn4lp3vm0dhv3prjtdn')
 
+# Slack Configuration
+SLACK_WEBHOOK_TOKEN = os.getenv('SLACK_WEBHOOK_TOKEN')
+SLACK_CHANNEL = os.getenv('SLACK_CHANNEL', 'jenkins-notifications')
+
 # Jenkins client
 jenkins_client = None
 
@@ -43,6 +48,68 @@ def get_jenkins_client():
             logger.error(f"Failed to connect to Jenkins: {e}")
             jenkins_client = None
     return jenkins_client
+
+def send_slack_notification(job_name, build_number, cancelled_by, reason, timestamp):
+    """Send Slack notification about build cancellation"""
+    if not SLACK_WEBHOOK_TOKEN:
+        logger.info("Slack webhook token not configured, skipping notification")
+        return
+    
+    try:
+        webhook = WebhookClient(url=SLACK_WEBHOOK_TOKEN)
+        
+        # Create rich message with blocks
+        message_blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "🛑 Jenkins Build Cancelled"
+                }
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Job:* {job_name}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Build #:* {build_number}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Cancelled by:* {cancelled_by}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Time:* {timestamp}"
+                    }
+                ]
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Reason:* {reason}"
+                }
+            }
+        ]
+        
+        response = webhook.send(
+            text=f"Build {job_name} #{build_number} cancelled by {cancelled_by}",
+            channel=SLACK_CHANNEL,
+            blocks=message_blocks
+        )
+        
+        if response.status_code == 200:
+            logger.info(f"Slack notification sent successfully for {job_name} #{build_number}")
+        else:
+            logger.error(f"Failed to send Slack notification: {response.status_code}")
+            
+    except Exception as e:
+        logger.error(f"Error sending Slack notification: {e}")
 
 def verify_cognito_token(token):
     """Verify Cognito JWT token and extract user info"""
@@ -377,6 +444,10 @@ def cancel_build(job_name, build_number):
             # Log the cancellation
             logger.info(f"Build {job_name}#{build_number} cancelled by {username}. Reason: {reason}")
             
+            # Send Slack notification
+            timestamp = datetime.utcnow().isoformat()
+            send_slack_notification(job_name, build_number, username, reason, timestamp)
+            
             return jsonify({
                 'success': True,
                 'message': f'Build {job_name}#{build_number} has been cancelled',
@@ -384,7 +455,7 @@ def cancel_build(job_name, build_number):
                 'build_number': build_number,
                 'cancelled_by': username,
                 'reason': reason,
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': timestamp
             })
             
         except Exception as e:
